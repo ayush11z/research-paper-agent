@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Research Paper Finder</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0e0f;
+      --surface: #161618;
+      --border: #2a2a2d;
+      --border-light: #3a3a3e;
+      --text: #e8e8e8;
+      --muted: #888;
+      --accent: #c8f07a;
+      --accent-dim: rgba(200,240,122,0.12);
+      --mono: 'DM Mono', monospace;
+      --sans: 'DM Sans', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      padding: 0 1rem;
+    }
+
+    header {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 3rem 0 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      font-size: 1.1rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-family: var(--mono);
+    }
+
+    header p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 0.4rem;
+    }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 0 4rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-family: var(--mono);
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    textarea, input[type="text"], input[type="number"] {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.15s;
+      resize: vertical;
+    }
+
+    textarea:focus, input:focus {
+      border-color: var(--border-light);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    button#search-btn {
+      width: 100%;
+      margin-top: 0.5rem;
+      padding: 0.85rem;
+      background: var(--accent);
+      color: #0e0e0f;
+      border: none;
+      border-radius: 6px;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    button#search-btn:hover { opacity: 0.85; }
+    button#search-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Progress log */
+    #log-area {
+      display: none;
+      margin-top: 2rem;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+      border-left: 2px solid var(--border);
+      padding-left: 1rem;
+      line-height: 1.9;
+    }
+
+    #log-area .step-active {
+      color: var(--accent);
+    }
+
+    /* Results */
+    #results-area {
+      margin-top: 2.5rem;
+    }
+
+    #results-title {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .paper-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 0.75rem;
+      animation: fadeUp 0.3s ease forwards;
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .paper-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .paper-title {
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1.4;
+      color: var(--text);
+    }
+
+    .paper-title a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .paper-title a:hover {
+      color: var(--accent);
+    }
+
+    .score-badge {
+      flex-shrink: 0;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid rgba(200,240,122,0.25);
+      border-radius: 4px;
+      padding: 2px 8px;
+      white-space: nowrap;
+    }
+
+    .paper-meta {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-family: var(--mono);
+      margin-bottom: 0.6rem;
+    }
+
+    .source-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 1px 7px;
+      border-radius: 3px;
+      margin-left: 6px;
+      background: var(--border);
+      color: var(--muted);
+    }
+
+    .paper-why {
+      font-size: 0.85rem;
+      color: #aaa;
+      line-height: 1.6;
+      border-left: 2px solid var(--border-light);
+      padding-left: 0.75rem;
+    }
+
+    .visual-evidence {
+      margin-top: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .visual-evidence summary {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.75rem;
+      font-family: var(--mono);
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      user-select: none;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .visual-evidence summary::before {
+      content: "▶";
+      font-size: 0.6rem;
+      transition: transform 0.15s;
+    }
+
+    .visual-evidence[open] summary::before {
+      transform: rotate(90deg);
+    }
+
+    .visual-evidence summary::-webkit-details-marker { display: none; }
+
+    .figure-list {
+      padding: 0.25rem 0.75rem 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .figure-item {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .fig-id {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .relevance-badge {
+      font-size: 0.65rem;
+      font-family: var(--mono);
+      font-weight: 500;
+      padding: 1px 6px;
+      border-radius: 3px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .relevance-badge.high {
+      background: rgba(74, 222, 128, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    .relevance-badge.medium {
+      background: rgba(250, 204, 21, 0.12);
+      color: #facc15;
+      border: 1px solid rgba(250, 204, 21, 0.3);
+    }
+
+    .fig-caption {
+      color: #999;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Research Paper Finder</h1>
+  <p>LangChain + Ollama + Semantic Scholar + arXiv — running locally</p>
+</header>
+
+<main>
+  <div class="form-group">
+    <label>Your thesis / argument</label>
+    <textarea id="thesis" rows="3" placeholder="e.g. Equivariant neural networks generalize better than standard architectures on datasets with known symmetry structures"></textarea>
+  </div>
+
+  <div class="form-group">
+    <label>Related work area</label>
+    <textarea id="related-work" rows="2" placeholder="e.g. group equivariance in deep learning, symmetry-aware architectures"></textarea>
+  </div>
+
+  <div class="row">
+    <div class="form-group">
+      <label>Field</label>
+      <input type="text" id="field" placeholder="machine learning" />
+    </div>
+    <div class="form-group">
+      <label>Papers to return</label>
+      <input type="number" id="top-n" value="8" min="1" max="20" />
+    </div>
+  </div>
+
+  <button id="search-btn" onclick="runSearch()">find papers →</button>
+
+  <div id="log-area"></div>
+
+  <div id="results-area">
+    <div id="results-title"></div>
+    <div id="cards"></div>
+  </div>
+</main>
+
+<script>
+  async function runSearch() {
+    const thesis = document.getElementById("thesis").value.trim();
+    const relatedWork = document.getElementById("related-work").value.trim();
+    const field = document.getElementById("field").value.trim();
+    const topN = parseInt(document.getElementById("top-n").value) || 8;
+
+    if (!thesis || !relatedWork) {
+      alert("Please fill in your thesis and related work area.");
+      return;
+    }
+
+    const btn = document.getElementById("search-btn");
+    const logArea = document.getElementById("log-area");
+    const cards = document.getElementById("cards");
+    const resultsTitle = document.getElementById("results-title");
+
+    btn.disabled = true;
+    logArea.style.display = "block";
+    logArea.innerHTML = "";
+    cards.innerHTML = "";
+    resultsTitle.style.display = "none";
+    let paperCount = 0;
+
+    const addLog = (msg, active = false) => {
+      const line = document.createElement("div");
+      line.textContent = msg;
+      if (active) line.className = "step-active";
+      logArea.appendChild(line);
+    };
+
+    // POST to Express server — gets back an SSE stream
+    // SSE concept: instead of one big JSON response, the server pushes small chunks
+    // as they happen. EventSource is the browser API that reads them.
+    const response = await fetch("/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ thesis, relatedWork, field, topN }),
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop();
+
+      for (const part of parts) {
+        if (!part.startsWith("data: ")) continue;
+        let msg;
+        try { msg = JSON.parse(part.slice(6)); } catch { continue; }
+
+        if (msg.type === "log") {
+          const isStep = /\[([1-4]\/4|done)\]/.test(msg.data);
+          addLog(msg.data, isStep);
+        }
+
+        if (msg.type === "result") {
+          if (paperCount === 0) {
+            resultsTitle.textContent = `— results —`;
+            resultsTitle.style.display = "block";
+          }
+          paperCount++;
+          addPaperCard(msg.data, paperCount);
+        }
+
+        if (msg.type === "done") {
+          addLog(`\n✓ done — ${paperCount} papers returned`);
+          btn.disabled = false;
+        }
+      }
+    }
+  }
+
+  function buildVisualEvidence(paper) {
+    const figures = paper.figures_found || [];
+    const relevant = figures.filter(f => f.relevance === "high" || f.relevance === "medium");
+    if (relevant.length === 0) return "";
+
+    const items = relevant.map(f => {
+      const caption = (f.caption || "").slice(0, 120) + ((f.caption || "").length > 120 ? "…" : "");
+      const cls = f.relevance === "high" ? "high" : "medium";
+      return `<div class="figure-item">
+        <span class="fig-id">${escapeHtml(f.figure_id || "")}</span>
+        <span class="relevance-badge ${cls}">${f.relevance}</span>
+        <span class="fig-caption">${escapeHtml(caption)}</span>
+      </div>`;
+    }).join("");
+
+    return `<details class="visual-evidence">
+      <summary>visual evidence · ${relevant.length} figure${relevant.length !== 1 ? "s" : ""}</summary>
+      <div class="figure-list">${items}</div>
+    </details>`;
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function addPaperCard(paper, index) {
+    const cards = document.getElementById("cards");
+    const relScore = paper.relevance_score || "?";
+    const visionScore = paper.vision_score != null ? ` · vision ${paper.vision_score}/10` : "";
+    const card = document.createElement("div");
+    card.className = "paper-card";
+    card.style.animationDelay = `${(index - 1) * 60}ms`;
+    card.innerHTML = `
+      <div class="paper-top">
+        <div class="paper-title">
+          <a href="${escapeHtml(paper.url || '#')}" target="_blank" rel="noopener">${escapeHtml(paper.title || "Untitled")}</a>
+        </div>
+        <span class="score-badge">${relScore}/10${visionScore}</span>
+      </div>
+      <div class="paper-meta">
+        ${escapeHtml(paper.authors || "")} · ${escapeHtml(paper.year || "")}
+        <span class="source-tag">${escapeHtml(paper.source || "")}</span>
+      </div>
+      <div class="paper-why">${escapeHtml(paper.why_relevant || "")}</div>
+      ${buildVisualEvidence(paper)}
+    `;
+    cards.appendChild(card);
+  }
+</script>
+
+</body>
+</html>
