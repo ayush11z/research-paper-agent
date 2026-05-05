@@ -17,6 +17,10 @@
       --muted: #888;
       --accent: #c8f07a;
       --accent-dim: rgba(200,240,122,0.12);
+      --green: #4ade80;
+      --green-dim: rgba(74,222,128,0.12);
+      --red: #ff6b6b;
+      --red-dim: rgba(255,107,107,0.12);
       --mono: 'DM Mono', monospace;
       --sans: 'DM Sans', sans-serif;
     }
@@ -30,7 +34,7 @@
     }
 
     header {
-      max-width: 720px;
+      max-width: 780px;
       margin: 0 auto;
       padding: 3rem 0 2rem;
       border-bottom: 1px solid var(--border);
@@ -52,14 +56,12 @@
     }
 
     main {
-      max-width: 720px;
+      max-width: 780px;
       margin: 0 auto;
       padding: 2rem 0 4rem;
     }
 
-    .form-group {
-      margin-bottom: 1.25rem;
-    }
+    .form-group { margin-bottom: 1.25rem; }
 
     label {
       display: block;
@@ -85,13 +87,17 @@
       resize: vertical;
     }
 
-    textarea:focus, input:focus {
-      border-color: var(--border-light);
-    }
+    textarea:focus, input:focus { border-color: var(--border-light); }
 
     .row {
       display: grid;
       grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .row3 {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
       gap: 1rem;
     }
 
@@ -126,68 +132,82 @@
       line-height: 1.9;
     }
 
-    #log-area .step-active {
-      color: var(--accent);
-    }
+    #log-area .step-active { color: var(--accent); }
 
-    /* Results */
-    #results-area {
-      margin-top: 2.5rem;
-    }
+    /* Results area + tabs */
+    #results-area { margin-top: 2.5rem; }
 
-    #results-title {
-      font-family: var(--mono);
-      font-size: 0.75rem;
-      color: var(--muted);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-bottom: 1rem;
+    #tab-nav {
       display: none;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.25rem;
     }
 
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      padding: 0.55rem 1.1rem;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .tab-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      background: var(--border);
+      border-radius: 8px;
+      padding: 0 5px;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Paper cards ─────────────────────────────────────── */
     .paper-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 1.25rem 1.5rem;
       margin-bottom: 0.75rem;
       animation: fadeUp 0.3s ease forwards;
       opacity: 0;
       transform: translateY(8px);
+      overflow: hidden;
+      transition: border-color 0.2s;
     }
 
-    @keyframes fadeUp {
-      to { opacity: 1; transform: translateY(0); }
+    .paper-card:hover { border-color: var(--border-light); }
+
+    @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+    .card-main {
+      padding: 1.25rem 1.5rem 1rem;
     }
 
-    .paper-top {
+    /* top row: badges */
+    .card-top-row {
       display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .paper-title {
-      font-size: 0.95rem;
-      font-weight: 500;
-      line-height: 1.4;
-      color: var(--text);
-    }
-
-    .paper-title a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .paper-title a:hover {
-      color: var(--accent);
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.6rem;
     }
 
     .score-badge {
-      flex-shrink: 0;
       font-family: var(--mono);
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       background: var(--accent-dim);
       color: var(--accent);
       border: 1px solid rgba(200,240,122,0.25);
@@ -196,112 +216,251 @@
       white-space: nowrap;
     }
 
-    .paper-meta {
-      font-size: 0.78rem;
-      color: var(--muted);
+    .supports-badge {
       font-family: var(--mono);
-      margin-bottom: 0.6rem;
+      font-size: 0.7rem;
+      border-radius: 3px;
+      padding: 2px 7px;
+      white-space: nowrap;
     }
 
-    .source-tag {
-      display: inline-block;
-      font-size: 0.7rem;
-      padding: 1px 7px;
-      border-radius: 3px;
-      margin-left: 6px;
+    .supports-badge.supports {
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(74,222,128,0.25);
+    }
+
+    .supports-badge.contradicts {
+      background: var(--red-dim);
+      color: var(--red);
+      border: 1px solid rgba(255,107,107,0.25);
+    }
+
+    .supports-badge.neutral {
       background: var(--border);
       color: var(--muted);
     }
 
-    .paper-why {
-      font-size: 0.85rem;
-      color: #aaa;
-      line-height: 1.6;
-      border-left: 2px solid var(--border-light);
-      padding-left: 0.75rem;
+    .source-tag {
+      font-size: 0.7rem;
+      font-family: var(--mono);
+      padding: 2px 7px;
+      border-radius: 3px;
+      background: var(--border);
+      color: var(--muted);
     }
 
-    .visual-evidence {
-      margin-top: 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
+    .year-tag {
+      font-size: 0.72rem;
+      font-family: var(--mono);
+      color: var(--muted);
+      margin-left: auto;
+    }
+
+    .paper-title {
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1.4;
+      margin-bottom: 0.35rem;
+    }
+
+    .paper-title a {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .paper-title a:hover { color: var(--accent); }
+
+    .paper-authors {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-family: var(--mono);
+      margin-bottom: 0.55rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .paper-why {
+      font-size: 0.83rem;
+      color: #999;
+      font-style: italic;
+      margin-bottom: 0.75rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Score breakdown bars */
+    .score-bars {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      align-items: flex-end;
+    }
+
+    .bar-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .bar-label {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .bar-track {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
       overflow: hidden;
     }
 
-    .visual-evidence summary {
-      padding: 0.5rem 0.75rem;
-      font-size: 0.75rem;
+    .bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      opacity: 0.7;
+      transition: width 0.4s ease;
+    }
+
+    .bar-val {
       font-family: var(--mono);
+      font-size: 0.6rem;
       color: var(--muted);
-      letter-spacing: 0.05em;
-      cursor: pointer;
-      user-select: none;
-      list-style: none;
+    }
+
+    /* Bottom row */
+    .card-bottom-row {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: var(--mono);
     }
 
-    .visual-evidence summary::before {
-      content: "▶";
-      font-size: 0.6rem;
-      transition: transform 0.15s;
+    .pdf-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.75rem;
     }
 
-    .visual-evidence[open] summary::before {
-      transform: rotate(90deg);
+    .pdf-link:hover { text-decoration: underline; }
+
+    .cited-count::before { content: "cited "; }
+
+    /* ── Hover-expanded summary section ── */
+    .card-expand {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
     }
 
-    .visual-evidence summary::-webkit-details-marker { display: none; }
-
-    .figure-list {
-      padding: 0.25rem 0.75rem 0.6rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
+    .paper-card:hover .card-expand {
+      max-height: 600px;
     }
 
-    .figure-item {
-      display: flex;
-      align-items: baseline;
-      gap: 0.5rem;
-      font-size: 0.8rem;
-      line-height: 1.5;
+    .card-expand-inner {
+      border-top: 1px solid var(--border);
+      padding: 1rem 1.5rem 1.25rem;
     }
 
-    .fig-id {
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 0.3rem 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .summary-label {
       font-family: var(--mono);
       font-size: 0.72rem;
       color: var(--muted);
-      white-space: nowrap;
-      flex-shrink: 0;
+      text-transform: uppercase;
+      padding-top: 0.1rem;
     }
 
-    .relevance-badge {
-      font-size: 0.65rem;
+    .summary-value {
+      font-size: 0.83rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .key-quote {
+      border-left: 2px solid var(--accent);
+      padding-left: 0.75rem;
+      font-size: 0.82rem;
+      color: #aaa;
+      font-style: italic;
+      line-height: 1.6;
+      margin-top: 0.5rem;
+    }
+
+    /* ── Gap & contradiction cards ─────────────────────── */
+    .gap-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 1.1rem 1.4rem;
+      margin-bottom: 0.75rem;
+      animation: fadeUp 0.3s ease forwards;
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    .gap-desc {
+      font-size: 0.9rem;
+      color: var(--text);
+      line-height: 1.55;
+      margin-bottom: 0.5rem;
+    }
+
+    .gap-suggestion {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .contradiction-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--red);
+      border-radius: 8px;
+      padding: 1.1rem 1.4rem;
+      margin-bottom: 0.75rem;
+      animation: fadeUp 0.3s ease forwards;
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    .contradiction-papers {
       font-family: var(--mono);
-      font-weight: 500;
-      padding: 1px 6px;
-      border-radius: 3px;
-      white-space: nowrap;
-      flex-shrink: 0;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 0.55rem;
     }
 
-    .relevance-badge.high {
-      background: rgba(74, 222, 128, 0.15);
-      color: #4ade80;
-      border: 1px solid rgba(74, 222, 128, 0.3);
+    .contradiction-papers span { color: var(--text); }
+
+    .contradiction-conflict {
+      font-size: 0.85rem;
+      color: #aaa;
+      line-height: 1.55;
     }
 
-    .relevance-badge.medium {
-      background: rgba(250, 204, 21, 0.12);
-      color: #facc15;
-      border: 1px solid rgba(250, 204, 21, 0.3);
-    }
-
-    .fig-caption {
-      color: #999;
+    .empty-tab {
+      font-family: var(--mono);
       font-size: 0.8rem;
+      color: var(--muted);
+      padding: 2rem 0;
     }
   </style>
 </head>
@@ -309,7 +468,7 @@
 
 <header>
   <h1>Research Paper Finder</h1>
-  <p>LangChain + Ollama + Semantic Scholar + arXiv — running locally</p>
+  <p>LangChain · Ollama · OpenAlex · Semantic Scholar · Crossref · arXiv — running locally</p>
 </header>
 
 <main>
@@ -321,6 +480,11 @@
   <div class="form-group">
     <label>Related work area</label>
     <textarea id="related-work" rows="2" placeholder="e.g. group equivariance in deep learning, symmetry-aware architectures"></textarea>
+  </div>
+
+  <div class="form-group">
+    <label>Keywords</label>
+    <input type="text" id="keywords" placeholder="e.g. equivariance, group theory, CNN" />
   </div>
 
   <div class="row">
@@ -339,17 +503,56 @@
   <div id="log-area"></div>
 
   <div id="results-area">
-    <div id="results-title"></div>
-    <div id="cards"></div>
+    <div id="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('papers')">
+        Papers<span class="tab-badge" id="badge-papers"></span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('gaps')">
+        Gaps<span class="tab-badge" id="badge-gaps"></span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('contradictions')">
+        Contradictions<span class="tab-badge" id="badge-contradictions"></span>
+      </button>
+    </div>
+
+    <div id="panel-papers" class="tab-panel active">
+      <div id="cards"></div>
+    </div>
+    <div id="panel-gaps" class="tab-panel">
+      <div id="gaps-cards"></div>
+    </div>
+    <div id="panel-contradictions" class="tab-panel">
+      <div id="contradictions-cards"></div>
+    </div>
   </div>
 </main>
 
 <script>
+  let paperCount = 0;
+
+  function switchTab(name) {
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.getAttribute("onclick") === `switchTab('${name}')`);
+    });
+    document.querySelectorAll(".tab-panel").forEach(panel => {
+      panel.classList.toggle("active", panel.id === `panel-${name}`);
+    });
+  }
+
+  function escapeHtml(str) {
+    return String(str ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
   async function runSearch() {
     const thesis = document.getElementById("thesis").value.trim();
     const relatedWork = document.getElementById("related-work").value.trim();
     const field = document.getElementById("field").value.trim();
     const topN = parseInt(document.getElementById("top-n").value) || 8;
+    const keywords = document.getElementById("keywords").value.trim();
 
     if (!thesis || !relatedWork) {
       alert("Please fill in your thesis and related work area.");
@@ -359,14 +562,23 @@
     const btn = document.getElementById("search-btn");
     const logArea = document.getElementById("log-area");
     const cards = document.getElementById("cards");
-    const resultsTitle = document.getElementById("results-title");
+    const gapsCards = document.getElementById("gaps-cards");
+    const contradictionsCards = document.getElementById("contradictions-cards");
+    const tabNav = document.getElementById("tab-nav");
 
     btn.disabled = true;
     logArea.style.display = "block";
     logArea.innerHTML = "";
     cards.innerHTML = "";
-    resultsTitle.style.display = "none";
-    let paperCount = 0;
+    gapsCards.innerHTML = "";
+    contradictionsCards.innerHTML = "";
+    tabNav.style.display = "none";
+    paperCount = 0;
+
+    document.getElementById("badge-papers").textContent = "";
+    document.getElementById("badge-gaps").textContent = "";
+    document.getElementById("badge-contradictions").textContent = "";
+    switchTab("papers");
 
     const addLog = (msg, active = false) => {
       const line = document.createElement("div");
@@ -375,13 +587,10 @@
       logArea.appendChild(line);
     };
 
-    // POST to Express server — gets back an SSE stream
-    // SSE concept: instead of one big JSON response, the server pushes small chunks
-    // as they happen. EventSource is the browser API that reads them.
     const response = await fetch("/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ thesis, relatedWork, field, topN }),
+      body: JSON.stringify({ thesis, relatedWork, field, topN, keywords }),
     });
 
     const reader = response.body.getReader();
@@ -402,80 +611,164 @@
         try { msg = JSON.parse(part.slice(6)); } catch { continue; }
 
         if (msg.type === "log") {
-          const isStep = /\[([1-4]\/4|done)\]/.test(msg.data);
+          const isStep = /\[([1-6]\/6|done)\]/.test(msg.data);
           addLog(msg.data, isStep);
         }
 
         if (msg.type === "result") {
-          if (paperCount === 0) {
-            resultsTitle.textContent = `— results —`;
-            resultsTitle.style.display = "block";
-          }
+          tabNav.style.display = "flex";
           paperCount++;
+          document.getElementById("badge-papers").textContent = paperCount;
           addPaperCard(msg.data, paperCount);
         }
 
+        if (msg.type === "gaps") renderGaps(msg.data);
+        if (msg.type === "contradictions") renderContradictions(msg.data);
+
         if (msg.type === "done") {
-          addLog(`\n✓ done — ${paperCount} papers returned`);
+          addLog(`✓ done — ${paperCount} papers returned`);
           btn.disabled = false;
         }
       }
     }
   }
 
-  function buildVisualEvidence(paper) {
-    const figures = paper.figures_found || [];
-    const relevant = figures.filter(f => f.relevance === "high" || f.relevance === "medium");
-    if (relevant.length === 0) return "";
-
-    const items = relevant.map(f => {
-      const caption = (f.caption || "").slice(0, 120) + ((f.caption || "").length > 120 ? "…" : "");
-      const cls = f.relevance === "high" ? "high" : "medium";
-      return `<div class="figure-item">
-        <span class="fig-id">${escapeHtml(f.figure_id || "")}</span>
-        <span class="relevance-badge ${cls}">${f.relevance}</span>
-        <span class="fig-caption">${escapeHtml(caption)}</span>
-      </div>`;
-    }).join("");
-
-    return `<details class="visual-evidence">
-      <summary>visual evidence · ${relevant.length} figure${relevant.length !== 1 ? "s" : ""}</summary>
-      <div class="figure-list">${items}</div>
-    </details>`;
+  function renderGaps(gaps) {
+    const container = document.getElementById("gaps-cards");
+    container.innerHTML = "";
+    if (!gaps || gaps.length === 0) {
+      container.innerHTML = '<div class="empty-tab">No gaps identified.</div>';
+      return;
+    }
+    document.getElementById("badge-gaps").textContent = gaps.length;
+    gaps.forEach((g, i) => {
+      const card = document.createElement("div");
+      card.className = "gap-card";
+      card.style.animationDelay = `${i * 60}ms`;
+      card.innerHTML = `
+        <div class="gap-desc">${escapeHtml(g.gap || "")}</div>
+        <div class="gap-suggestion">${escapeHtml(g.suggestion || "")}</div>
+      `;
+      container.appendChild(card);
+    });
   }
 
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+  function renderContradictions(contradictions) {
+    const container = document.getElementById("contradictions-cards");
+    container.innerHTML = "";
+    if (!contradictions || contradictions.length === 0) {
+      container.innerHTML = '<div class="empty-tab">No contradictions identified.</div>';
+      return;
+    }
+    document.getElementById("badge-contradictions").textContent = contradictions.length;
+    contradictions.forEach((c, i) => {
+      const a = (c.paper_a || "").slice(0, 60) + ((c.paper_a || "").length > 60 ? "…" : "");
+      const b = (c.paper_b || "").slice(0, 60) + ((c.paper_b || "").length > 60 ? "…" : "");
+      const card = document.createElement("div");
+      card.className = "contradiction-card";
+      card.style.animationDelay = `${i * 60}ms`;
+      card.innerHTML = `
+        <div class="contradiction-papers">
+          <span>${escapeHtml(a)}</span> &nbsp;vs&nbsp; <span>${escapeHtml(b)}</span>
+        </div>
+        <div class="contradiction-conflict">${escapeHtml(c.conflict || "")}</div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function makeScoreBars(paper) {
+    const bars = [
+      { label: "semantic", val: paper.semantic_match },
+      { label: "impact",   val: paper.citation_impact },
+      { label: "recency",  val: paper.recency },
+      { label: "venue",    val: paper.venue_quality },
+      { label: "direct",   val: paper.abstract_directness },
+    ];
+    return bars.map(b => {
+      const v = b.val ?? 5;
+      const pct = Math.round((v / 10) * 100);
+      return `<div class="bar-item">
+        <div class="bar-label">${b.label}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <div class="bar-val">${v}</div>
+      </div>`;
+    }).join("");
+  }
+
+  function makeSummarySection(summary) {
+    if (!summary) return "";
+    const rows = [
+      ["Claim",   summary.claim],
+      ["Method",  summary.method],
+      ["Dataset", summary.dataset],
+      ["Result",  summary.result],
+    ].filter(([, v]) => v).map(([label, val]) =>
+      `<div class="summary-label">${label}</div><div class="summary-value">${escapeHtml(val)}</div>`
+    ).join("");
+
+    const quote = summary.relevance_quote
+      ? `<blockquote class="key-quote">${escapeHtml(summary.relevance_quote)}</blockquote>` : "";
+
+    return `<div class="summary-grid">${rows}</div>${quote}`;
+  }
+
+  function supportsBadge(summary) {
+    if (!summary) return "";
+    const s = (summary.supports_thesis || "neutral").toLowerCase();
+    const cls = s.includes("support") ? "supports" : s.includes("contra") ? "contradicts" : "neutral";
+    const label = s.includes("support") ? "supports" : s.includes("contra") ? "contradicts" : "neutral";
+    return `<span class="supports-badge ${cls}">${label}</span>`;
   }
 
   function addPaperCard(paper, index) {
     const cards = document.getElementById("cards");
-    const relScore = paper.relevance_score || "?";
-    const visionScore = paper.vision_score != null ? ` · vision ${paper.vision_score}/10` : "";
+    const score = paper.final_score != null ? paper.final_score.toFixed(1) : (paper.relevance_score || "?");
+    const summary = paper.summary || null;
+
+    const pdfBtn = paper.pdf_url
+      ? `<a class="pdf-link" href="${escapeHtml(paper.pdf_url)}" target="_blank" rel="noopener">Open PDF →</a>` : "";
+
+    const citedStr = (paper.cited_by_count > 0)
+      ? `<span class="cited-count">${paper.cited_by_count.toLocaleString()}</span>` : "";
+
+    const venueStr = paper.venue
+      ? `<span>${escapeHtml(paper.venue)}</span>` : "";
+
+    const expandSection = (summary || paper.why_relevant)
+      ? `<div class="card-expand">
+           <div class="card-expand-inner">
+             ${makeSummarySection(summary)}
+           </div>
+         </div>` : "";
+
     const card = document.createElement("div");
     card.className = "paper-card";
     card.style.animationDelay = `${(index - 1) * 60}ms`;
     card.innerHTML = `
-      <div class="paper-top">
-        <div class="paper-title">
-          <a href="${escapeHtml(paper.url || '#')}" target="_blank" rel="noopener">${escapeHtml(paper.title || "Untitled")}</a>
+      <div class="card-main">
+        <div class="card-top-row">
+          <span class="score-badge">${score}/10</span>
+          ${supportsBadge(summary)}
+          <span class="source-tag">${escapeHtml(paper.source || "")}</span>
+          <span class="year-tag">${escapeHtml(paper.year || "")}</span>
         </div>
-        <span class="score-badge">${relScore}/10${visionScore}</span>
+        <div class="paper-title">
+          <a href="${escapeHtml(paper.url || "#")}" target="_blank" rel="noopener">${escapeHtml(paper.title || "Untitled")}</a>
+        </div>
+        <div class="paper-authors">${escapeHtml(paper.authors || "")}</div>
+        <div class="paper-why">${escapeHtml(paper.why_relevant || "")}</div>
+        <div class="score-bars">${makeScoreBars(paper)}</div>
+        <div class="card-bottom-row">
+          ${pdfBtn}
+          ${citedStr}
+          ${venueStr}
+        </div>
       </div>
-      <div class="paper-meta">
-        ${escapeHtml(paper.authors || "")} · ${escapeHtml(paper.year || "")}
-        <span class="source-tag">${escapeHtml(paper.source || "")}</span>
-      </div>
-      <div class="paper-why">${escapeHtml(paper.why_relevant || "")}</div>
-      ${buildVisualEvidence(paper)}
+      ${expandSection}
     `;
     cards.appendChild(card);
   }
 </script>
-
 </body>
 </html>

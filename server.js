@@ -31,7 +31,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.post("/search", (req, res) => {
-  const { thesis, relatedWork, field, topN } = req.body;
+  const { thesis, relatedWork, field, topN, keywords } = req.body;
 
   if (!thesis || !relatedWork) {
     return res.status(400).json({ error: "thesis and relatedWork are required" });
@@ -55,20 +55,29 @@ app.post("/search", (req, res) => {
       RELATED_WORK: relatedWork,
       FIELD: field || "computer science",
       TOP_N: String(topN || 8),
+      KEYWORDS: keywords || "",
       GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
     },
   });
+
+  const handleLine = (line) => {
+    console.log("LINE:", line);
+    try {
+      const parsed = JSON.parse(line);
+      if (parsed.type === "gaps" || parsed.type === "contradictions") {
+        send(parsed.type, parsed.data);
+      } else {
+        send("result", parsed);
+      }
+    } catch { send("log", line); }
+  };
 
   let stdoutBuffer = "";
   py.stdout.on("data", (data) => {
     stdoutBuffer += data.toString();
     const lines = stdoutBuffer.split("\n");
     stdoutBuffer = lines.pop();
-    lines.filter(Boolean).forEach((line) => {
-      console.log("LINE:", line);
-      try { send("result", JSON.parse(line)); }
-      catch { send("log", line); }
-    });
+    lines.filter(Boolean).forEach(handleLine);
   });
 
   py.stderr.on("data", (data) => {
@@ -79,10 +88,7 @@ app.post("/search", (req, res) => {
   py.on("close", (code) => {
     console.log("Python exited with code:", code);
     if (stdoutBuffer.trim()) {
-      stdoutBuffer.split("\n").filter(Boolean).forEach((line) => {
-        try { send("result", JSON.parse(line)); }
-        catch { send("log", line); }
-      });
+      stdoutBuffer.split("\n").filter(Boolean).forEach(handleLine);
     }
     send("done", { code });
     res.end();
