@@ -38,6 +38,15 @@ async def lifespan(_app):
 app = FastAPI(lifespan=lifespan)
 
 
+@app.middleware("http")
+async def no_stale_pages(request: Request, call_next):
+    """Make the browser re-check pages on every load so UI updates show up immediately."""
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.endswith(".html"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 @app.get("/api/status")
 async def status():
     return services.status
