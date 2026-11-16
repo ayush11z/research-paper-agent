@@ -25,8 +25,8 @@ cp .env.example .env     # add DEEPGRAM_API_KEY, OPENALEX_API_KEY, CONTACT_EMAIL
 
 # 4. Run
 .venv/bin/python app.py
-# deep search: http://localhost:3000
-# live mode:   http://localhost:3000/live.html
+# live mode:   http://localhost:3000
+# deep search: http://localhost:3000/deep.html
 ```
 
 The first start downloads the two Hugging Face models (about 200 MB).
@@ -36,7 +36,7 @@ The first start downloads the two Hugging Face models (about 200 MB).
 ## Live mode
 
 ```
- Browser (public/live.html)
+ Browser (public/index.html)
    mic and/or meeting tab audio ─► AudioWorklet ─► 16 kHz PCM, 100 ms frames
         │                                                 ▲ transcript, topics, papers (JSON)
         ▼  WebSocket /ws/live                             │
@@ -64,7 +64,7 @@ Deepgram adds roughly 0.3 s from speech to a final transcript. Interim triggerin
 - A query that is nearly the same as a recent one (by word overlap) is not searched again, and a paper is never suggested twice.
 - The relevance bar uses cosine similarity to the conversation. Results below `MIN_RELEVANCE` (default 0.6) are hidden.
 - "Meeting tab + mic" captures a Meet, Zoom or Teams browser tab via `getDisplayMedia` (tick "share tab audio"), so it hears everyone, not just you.
-- The **jargon** box sends terms to Deepgram's `keyterm` prompting so field-specific words are transcribed correctly.
+- Nothing needs to be typed in: topics come from the conversation itself. The optional **mis-transcribed words** box sends terms to Deepgram's `keyterm` prompting so field-specific words are transcribed correctly.
 - Typed lines go through the same pipeline as speech. This is handy for testing without a Deepgram key.
 - Papers can be pinned and copied as a Markdown list.
 
@@ -82,7 +82,7 @@ Deepgram adds roughly 0.3 s from speech to a final transcript. Interim triggerin
 ## Deep search
 
 ```
- public/index.html ── POST /search (SSE) ──► app.py ──► citation_agent.py --server
+ public/deep.html ── POST /search (SSE) ──► app.py ──► citation_agent.py --server
    1. LLM writes 5 queries: direct, synonym, method, domain, opposing
    2. OpenAlex · Semantic Scholar · Crossref · arXiv → dedupe (DOI, arXiv ID, title overlap)
    3. rank: LLM match 35% · citations 20% · recency 15% · venue 15% · abstract directness 15%
@@ -105,12 +105,12 @@ Each paper comes back with a score breakdown and a summary: `claim`, `method`, `
 | `live/models.py` | Hugging Face keyphrase extractor and embedding ranker (kept warm, LRU-cached) |
 | `live/sources.py` | Async OpenAlex / Semantic Scholar / arXiv clients tuned for latency |
 | `live/llm.py` | Ollama query writer with JSON-schema output |
-| `public/live.html` | Live UI: audio capture (AudioWorklet), transcript, suggestion feed, pins |
+| `public/index.html` | Live UI (home page): audio capture (AudioWorklet), transcript, suggestion feed, pins |
 | `citation_agent.py` | Deep search pipeline |
 | `citation_graph.py` | Expansion through Semantic Scholar references |
 | `analysis.py` | Gap and contradiction finder |
 | `vision_ranker.py` | Gemini figure/table analysis (`google-genai` SDK) |
-| `public/index.html` | Deep search UI |
+| `public/deep.html` | Deep search UI |
 
 ## Configuration
 

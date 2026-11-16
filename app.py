@@ -1,7 +1,7 @@
 """Single server for both modes (replaces the old Node/Express server).
 
-  /            deep search UI (public/index.html), backed by POST /search (SSE)
-  /live.html   live meeting mode, backed by the /ws/live WebSocket
+  /            live meeting mode (public/index.html), backed by the /ws/live WebSocket
+  /deep.html   deep search UI, backed by POST /search (SSE)
 
 Run:  .venv/bin/python app.py      (or: uvicorn app:app --port 3000)
 """
