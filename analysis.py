@@ -1,7 +1,8 @@
 import json
+import os
 from langchain_ollama import ChatOllama
 
-llm = ChatOllama(model="llama3", temperature=0)
+llm = ChatOllama(model=os.getenv("OLLAMA_MODEL", "qwen3:4b-instruct"), temperature=0)
 
 
 def _paper_summaries(papers):

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Paper Suggestions</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0e0e0f; --surface: #161618; --surface-2: #1c1c1f;
+      --border: #2a2a2d; --border-light: #3a3a3e;
+      --text: #e8e8e8; --muted: #888; --faint: #5a5a5e;
+      --accent: #c8f07a; --accent-dim: rgba(200,240,122,0.12);
+      --blue: #7ab8f0; --blue-dim: rgba(122,184,240,0.12);
+      --red: #ff6b6b; --red-dim: rgba(255,107,107,0.12);
+      --mono: 'DM Mono', monospace; --sans: 'DM Sans', sans-serif;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; padding: 0 1rem; }
+    a { color: inherit; }
+
+    header { max-width: 1200px; margin: 0 auto; padding: 2rem 0 1.25rem; border-bottom: 1px solid var(--border);
+             display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; }
+    header h1 { font-size: 1.1rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); font-family: var(--mono); }
+    header p { font-size: 0.85rem; color: var(--muted); margin-top: 0.4rem; }
+    nav { display: flex; gap: 1rem; font-family: var(--mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    nav a { color: var(--muted); text-decoration: none; }
+    nav a.on { color: var(--accent); }
+
+    .bar { max-width: 1200px; margin: 1.25rem auto 0; display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+    .bar input { flex: 1 1 260px; min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+                 padding: 0.6rem 0.85rem; color: var(--text); font-family: var(--sans); font-size: 0.85rem; outline: none; }
+    .bar input:focus { border-color: var(--border-light); }
+    button { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.04em; border-radius: 6px; padding: 0.6rem 0.95rem;
+             cursor: pointer; border: 1px solid var(--border-light); background: var(--surface); color: var(--text); transition: opacity .15s; }
+    button:hover { opacity: 0.85; }
+    button.primary { background: var(--accent); color: #0e0e0f; border-color: var(--accent); font-weight: 500; }
+    button.stop { background: var(--red-dim); color: var(--red); border-color: transparent; }
+    button[hidden] { display: none; }
+
+    .pills { max-width: 1200px; margin: 0.75rem auto 0; display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .pill { font-family: var(--mono); font-size: 0.68rem; padding: 0.2rem 0.55rem; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+    .pill.ok { color: var(--accent); border-color: rgba(200,240,122,0.3); }
+    .pill.bad { color: var(--red); border-color: rgba(255,107,107,0.3); }
+    .pill.live { color: #0e0e0f; background: var(--red); border-color: var(--red); animation: pulse 1.6s infinite; }
+    @keyframes pulse { 50% { opacity: 0.55; } }
+
+    .grid { max-width: 1200px; margin: 1.25rem auto 3rem; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 1.25rem; }
+    @media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; min-height: 0; }
+    .panel h2 { font-family: var(--mono); font-size: 0.7rem; font-weight: 500; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase;
+                padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+    .scroll { overflow-y: auto; padding: 0.9rem 1rem; height: calc(100vh - 290px); min-height: 320px; }
+    .empty { color: var(--faint); font-size: 0.85rem; line-height: 1.6; }
+
+    .line { font-size: 0.9rem; line-height: 1.55; margin-bottom: 0.55rem; overflow-wrap: anywhere; }
+    .line .spk { font-family: var(--mono); font-size: 0.68rem; color: var(--blue); margin-right: 0.4rem; }
+    .line.interim { color: var(--muted); font-style: italic; }
+    .say { display: flex; gap: 0.5rem; padding: 0.75rem 1rem; border-top: 1px solid var(--border); }
+    .say input { flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.55rem 0.75rem;
+                 color: var(--text); font-family: var(--sans); font-size: 0.85rem; outline: none; }
+
+    .topic { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.9rem; background: var(--surface-2); animation: in .25s ease-out; }
+    @keyframes in { from { opacity: 0; transform: translateY(-4px); } }
+    .topic-head { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.85rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .topic-q { font-weight: 500; font-size: 0.9rem; flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+    .badge { font-family: var(--mono); font-size: 0.64rem; padding: 0.12rem 0.45rem; border-radius: 4px; white-space: nowrap; }
+    .badge.instant { background: var(--accent-dim); color: var(--accent); }
+    .badge.llm { background: var(--blue-dim); color: var(--blue); }
+    .badge.ms { color: var(--muted); border: 1px solid var(--border); }
+    .topic-body .searching, .topic-body .none { color: var(--faint); font-size: 0.8rem; padding: 0.6rem 0.85rem; font-family: var(--mono); }
+
+    .paper { padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 0.25rem 0.75rem; }
+    .paper:last-child { border-bottom: none; }
+    .paper .t { font-size: 0.88rem; line-height: 1.35; text-decoration: none; overflow-wrap: anywhere; }
+    .paper .t:hover { color: var(--accent); }
+    .paper .m { grid-column: 1; font-size: 0.75rem; color: var(--muted); overflow-wrap: anywhere; }
+    .paper .m a { color: var(--accent); text-decoration: none; margin-left: 0.4rem; }
+    .paper .side { grid-row: 1 / span 2; grid-column: 2; display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem; }
+    .rel { width: 46px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .rel i { display: block; height: 100%; background: var(--accent); }
+    .pin { padding: 0.15rem 0.45rem; font-size: 0.65rem; }
+    .pin.on { background: var(--accent-dim); color: var(--accent); border-color: transparent; }
+
+    details.pinned { max-width: 1200px; margin: 0 auto 2rem; }
+    details.pinned summary { cursor: pointer; font-family: var(--mono); font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    details.pinned ol { margin: 0.75rem 0 0 1.2rem; font-size: 0.85rem; line-height: 1.7; }
+    .hint { color: var(--faint); font-size: 0.75rem; max-width: 1200px; margin: 0.5rem auto 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Live Paper Suggestions</h1>
+      <p>Talk normally and papers on whatever you're discussing show up on the right.</p>
+    </div>
+    <nav><a href="/">Deep search</a><a href="/live.html" class="on">Live</a></nav>
+  </header>
+
+  <div class="bar">
+    <input id="keyterms" type="text" placeholder="Jargon to recognize, comma-separated (e.g. equivariance, SE(3), diffusion policy)" />
+    <button id="btn-mic" class="primary">● mic</button>
+    <button id="btn-tab">● meeting tab + mic</button>
+    <button id="btn-stop" class="stop" hidden>■ stop</button>
+  </div>
+  <p class="hint">"Meeting tab + mic" captures a Google Meet, Zoom or Teams browser tab (tick "share tab audio") plus your mic, so it hears everyone. Use headphones to avoid echo.</p>
+  <div class="pills" id="pills"><span class="pill">connecting…</span></div>
+
+  <div class="grid">
+    <section class="panel">
+      <h2><span>Transcript</span><button id="btn-clear" class="pin">clear</button></h2>
+      <div class="scroll" id="transcript"><p class="empty">Start listening or type below. Typed lines go through the same pipeline as speech.</p></div>
+      <form class="say" id="say">
+        <input id="say-input" type="text" placeholder="Type what someone said…" autocomplete="off" />
+        <button type="submit">send</button>
+      </form>
+    </section>
+    <section class="panel">
+      <h2><span>Suggested papers</span><span id="stats"></span></h2>
+      <div class="scroll" id="feed"><p class="empty">Suggestions appear here as topics come up. <b style="color:var(--accent)">instant</b> comes from keyphrases, <b style="color:var(--blue)">llm</b> from the local model reading the conversation.</p></div>
+    </section>
+  </div>
+
+  <details class="pinned" id="pinned-box">
+    <summary>Pinned papers (<span id="pin-count">0</span>) <button id="btn-copy" class="pin" type="button">copy as markdown</button></summary>
+    <ol id="pinned"></ol>
+  </details>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+let ws, audioCtx, worklet, streams = [], listening = false, status = {};
+let interimEl = null, latencies = [];
+const topics = new Map();
+let pinned = [];
+try { pinned = JSON.parse(localStorage.getItem("pinned-papers") || "[]"); } catch {}
+try { $("keyterms").value = localStorage.getItem("keyterms") || ""; } catch {}
+
+// ── WebSocket ────────────────────────────────────────────────
+function connect() {
+  ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws/live`);
+  ws.binaryType = "arraybuffer";
+  ws.onmessage = (e) => handle(JSON.parse(e.data));
+  ws.onclose = () => { renderPills(false); stopAudio(); setTimeout(connect, 1500); };
+}
+const sendCtl = (obj) => ws?.readyState === 1 && ws.send(JSON.stringify(obj));
+
+function handle(m) {
+  switch (m.type) {
+    case "status": status = m; renderPills(true); break;
+    case "transcript": addTranscript(m); break;
+    case "topic": addTopic(m); break;
+    case "papers": addPapers(m); break;
+    case "topic_done": topicDone(m); break;
+    case "listening": listening = m.on; renderPills(true); if (!m.on) stopAudio(); break;
+    case "error": addSystemLine(m.message, true); if (!listening) stopAudio(); break;
+    case "log": console.log(m.message); break;
+  }
+}
+
+function renderPills(connected) {
+  const p = [];
+  if (!connected) p.push(`<span class="pill bad">server offline, retrying…</span>`);
+  else {
+    if (listening) p.push(`<span class="pill live">● listening</span>`);
+    p.push(`<span class="pill ${status.deepgram ? "ok" : "bad"}">deepgram ${status.deepgram ? status.deepgram_model : "key missing"}</span>`);
+    p.push(`<span class="pill ${status.llm ? "ok" : "bad"}">llm ${status.llm || "off (ollama not running)"}</span>`);
+    p.push(`<span class="pill">rank ${esc((status.embed_model || "").split("/").pop())}</span>`);
+    p.push(`<span class="pill">${esc((status.sources || []).join(" · "))}</span>`);
+    p.push(`<span class="pill">${esc(status.device || "")}</span>`);
+  }
+  $("pills").innerHTML = p.join("");
+  $("btn-mic").hidden = $("btn-tab").hidden = listening;
+  $("btn-stop").hidden = !listening;
+}
+
+// ── Transcript ───────────────────────────────────────────────
+function clearEmpty(el) { const e = el.querySelector(".empty"); if (e) e.remove(); }
+function addTranscript(m) {
+  const box = $("transcript"); clearEmpty(box);
+  const stick = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+  if (!interimEl) { interimEl = document.createElement("div"); box.appendChild(interimEl); }
+  interimEl.className = "line" + (m.is_final ? "" : " interim");
+  interimEl.innerHTML = (m.speaker ? `<span class="spk">${esc(m.speaker)}</span>` : "") + esc(m.text);
+  if (m.is_final) interimEl = null;
+  if (stick) box.scrollTop = box.scrollHeight;
+}
+function addSystemLine(text, bad) {
+  const box = $("transcript"); clearEmpty(box);
+  const d = document.createElement("div");
+  d.className = "line"; d.style.color = bad ? "var(--red)" : "var(--muted)"; d.textContent = text;
+  box.appendChild(d); box.scrollTop = box.scrollHeight;
+}
+
+// ── Suggestions feed ─────────────────────────────────────────
+function addTopic(m) {
+  const feed = $("feed"); clearEmpty(feed);
+  const el = document.createElement("div");
+  el.className = "topic";
+  el.innerHTML = `<div class="topic-head"><span class="topic-q">${esc(m.query)}</span>
+      <span class="badge ${m.via}">${m.via === "llm" ? "llm" : "instant"}</span><span class="badge ms"></span></div>
+    <div class="topic-body"><div class="searching">searching…</div></div>`;
+  feed.prepend(el);
+  topics.set(m.id, { el, papers: [] });
+}
+function addPapers(m) {
+  const t = topics.get(m.topic_id); if (!t) return;
+  t.papers = m.papers;
+  t.el.querySelector(".badge.ms").textContent = `${m.first_latency_ms} ms`;
+  if (m.latency_ms === m.first_latency_ms) { latencies.push(m.first_latency_ms); renderStats(); }
+  t.el.querySelector(".topic-body").innerHTML = m.papers.map(paperHtml).join("");
+}
+function topicDone(m) {
+  const t = topics.get(m.id); if (!t) return;
+  if (!m.found) { t.el.remove(); topics.delete(m.id); if (!topics.size) $("feed").innerHTML = `<p class="empty">Nothing relevant yet.</p>`; }
+}
+function renderStats() {
+  const s = [...latencies].sort((a, b) => a - b);
+  const med = s[Math.floor(s.length / 2)];
+  $("stats").textContent = `median ${med} ms · ${s.length} topics`;
+}
+function paperHtml(p) {
+  const on = pinned.some(x => x.key === p.key);
+  const meta = [p.authors, p.year, p.venue, p.cited_by_count ? `${p.cited_by_count.toLocaleString()} cites` : ""].filter(Boolean).map(esc).join(" · ");
+  const pct = Math.max(0, Math.min(100, Math.round((p.relevance - 0.4) / 0.45 * 100)));
+  return `<div class="paper">
+    <a class="t" href="${esc(p.url)}" target="_blank" rel="noopener" title="${esc((p.abstract || "").slice(0, 400))}">${esc(p.title)}</a>
+    <div class="side"><div class="rel" title="relevance ${p.relevance}"><i style="width:${pct}%"></i></div>
+      <button class="pin ${on ? "on" : ""}" data-key="${esc(p.key)}">${on ? "pinned" : "pin"}</button></div>
+    <div class="m">${meta}${p.pdf_url ? `<a href="${esc(p.pdf_url)}" target="_blank" rel="noopener">pdf ↗</a>` : ""}</div>
+  </div>`;
+}
+$("feed").addEventListener("click", (e) => {
+  const b = e.target.closest(".pin"); if (!b) return;
+  const key = b.dataset.key;
+  const paper = [...topics.values()].flatMap(t => t.papers).find(p => p.key === key);
+  if (pinned.some(x => x.key === key)) pinned = pinned.filter(x => x.key !== key);
+  else if (paper) pinned.push({ key, title: paper.title, url: paper.url, authors: paper.authors, year: paper.year });
+  b.classList.toggle("on"); b.textContent = b.classList.contains("on") ? "pinned" : "pin";
+  savePinned();
+});
+function savePinned() {
+  try { localStorage.setItem("pinned-papers", JSON.stringify(pinned)); } catch {}
+  $("pin-count").textContent = pinned.length;
+  $("pinned").innerHTML = pinned.map(p => `<li><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a> <span style="color:var(--muted)">${esc(p.authors)} ${esc(p.year ?? "")}</span></li>`).join("");
+}
+$("btn-copy").addEventListener("click", (e) => {
+  e.preventDefault();
+  navigator.clipboard.writeText(pinned.map(p => `- [${p.title}](${p.url}) (${p.authors}, ${p.year ?? "n.d."})`).join("\n"));
+  e.target.textContent = "copied"; setTimeout(() => e.target.textContent = "copy as markdown", 1200);
+});
+
+// ── Audio capture: AudioWorklet -> 16-bit PCM, 100 ms frames ─
+const WORKLET = `
+class PCM extends AudioWorkletProcessor {
+  constructor() { super(); this.buf = new Int16Array(Math.round(sampleRate / 10)); this.n = 0; }
+  process(inputs) {
+    const ch = inputs[0][0]; if (!ch) return true;
+    for (let i = 0; i < ch.length; i++) {
+      const s = Math.max(-1, Math.min(1, ch[i]));
+      this.buf[this.n++] = s < 0 ? s * 0x8000 : s * 0x7fff;
+      if (this.n === this.buf.length) { this.port.postMessage(this.buf.buffer.slice(0)); this.n = 0; }
+    }
+    return true;
+  }
+}
+registerProcessor("pcm", PCM);`;
+
+async function startAudio(withTab) {
+  try {
+    const mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 } });
+    streams = [mic];
+    if (withTab) {
+      const tab = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      if (!tab.getAudioTracks().length) { tab.getTracks().forEach(t => t.stop()); throw new Error('No tab audio. Pick a browser tab and tick "share tab audio".'); }
+      tab.getVideoTracks().forEach(t => t.stop());
+      streams.push(tab);
+    }
+    try { audioCtx = new AudioContext({ sampleRate: 16000 }); } catch { audioCtx = new AudioContext(); }
+    await audioCtx.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET], { type: "text/javascript" })));
+    worklet = new AudioWorkletNode(audioCtx, "pcm", { channelCount: 1, channelCountMode: "explicit" });
+    worklet.port.onmessage = (e) => { if (ws?.readyState === 1) ws.send(e.data); };
+    for (const s of streams) audioCtx.createMediaStreamSource(s).connect(worklet);
+    const keyterms = $("keyterms").value.split(",").map(s => s.trim()).filter(Boolean);
+    try { localStorage.setItem("keyterms", $("keyterms").value); } catch {}
+    sendCtl({ type: "start", sample_rate: audioCtx.sampleRate, keyterms });
+  } catch (err) {
+    stopAudio();
+    addSystemLine(`Audio capture failed: ${err.message}`, true);
+  }
+}
+function stopAudio() {
+  streams.forEach(s => s.getTracks().forEach(t => t.stop())); streams = [];
+  if (worklet) { worklet.port.onmessage = null; worklet.disconnect(); worklet = null; }
+  if (audioCtx) { audioCtx.close(); audioCtx = null; }
+}
+
+$("btn-mic").onclick = () => startAudio(false);
+$("btn-tab").onclick = () => startAudio(true);
+$("btn-stop").onclick = () => { sendCtl({ type: "stop" }); stopAudio(); };
+$("btn-clear").onclick = () => { $("transcript").innerHTML = ""; interimEl = null; };
+$("say").onsubmit = (e) => {
+  e.preventDefault();
+  const text = $("say-input").value.trim(); if (!text) return;
+  sendCtl({ type: "text", text }); $("say-input").value = "";
+};
+
+savePinned();
+connect();
+</script>
+</body>
+</html>

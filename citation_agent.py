@@ -14,12 +14,22 @@ import os
 import re
 from langchain_ollama import ChatOllama
 from langchain_core.messages import SystemMessage, HumanMessage
-import citation_graph
-import analysis
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+
+import citation_graph  # noqa: E402
+import analysis  # noqa: E402
 
 SERVER_MODE = "--server" in sys.argv
 
-llm = ChatOllama(model="llama3", temperature=0)
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:4b-instruct")
+OPENALEX_API_KEY = os.getenv("OPENALEX_API_KEY", "")   # required by OpenAlex since Feb 2026
+S2_API_KEY = os.getenv("S2_API_KEY", "")               # optional; keyless S2 is heavily rate-limited
+CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "")         # Crossref/Unpaywall "polite pool"
+S2_HEADERS = {"x-api-key": S2_API_KEY} if S2_API_KEY else {}
+
+llm = ChatOllama(model=OLLAMA_MODEL, temperature=0)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -109,6 +119,8 @@ def search_openalex(query, limit=5):
                 "search": query,
                 "per-page": limit,
                 "select": "title,authorships,publication_year,abstract_inverted_index,doi,cited_by_count,primary_location",
+                **({"api_key": OPENALEX_API_KEY} if OPENALEX_API_KEY else {}),
+                **({"mailto": CONTACT_EMAIL} if CONTACT_EMAIL else {}),
             },
             timeout=15,
         )
@@ -157,6 +169,7 @@ def search_semantic_scholar(query, limit=5):
                 "limit": limit,
                 "fields": "title,authors,year,abstract,url,externalIds,citationCount,venue,paperId",
             },
+            headers=S2_HEADERS,
             timeout=15,
         )
         resp.raise_for_status()
@@ -197,7 +210,7 @@ def search_crossref(query, limit=4):
                 "rows": limit,
                 "select": "title,author,published,abstract,DOI,is-referenced-by-count,container-title",
             },
-            headers={"User-Agent": "ResearchPaperFinder/1.0 (mailto:research@finder.com)"},
+            headers={"User-Agent": "ResearchPaperFinder/1.0" + (f" (mailto:{CONTACT_EMAIL})" if CONTACT_EMAIL else "")},
             timeout=15,
         )
         resp.raise_for_status()
@@ -415,12 +428,12 @@ Respond ONLY with a JSON array of strings (one per paper, same order):
 # ── Unpaywall ─────────────────────────────────────────────────────────────────
 
 def get_pdf_url(doi):
-    if not doi:
+    if not doi or not CONTACT_EMAIL:  # Unpaywall requires a real contact email
         return ""
     try:
         resp = requests.get(
             f"https://api.unpaywall.org/v2/{doi}",
-            params={"email": "research@finder.com"},
+            params={"email": CONTACT_EMAIL},
             timeout=8,
         )
         if resp.status_code == 200:
@@ -468,6 +481,7 @@ def get_s2_recommendations(ss_id):
         resp = requests.get(
             f"https://api.semanticscholar.org/recommendations/v1/papers/forpaper/{ss_id}",
             params={"fields": "title,authors,year,abstract,citationCount,url,externalIds,venue"},
+            headers=S2_HEADERS,
             timeout=15,
         )
         if resp.status_code == 429:

@@ -1,5 +1,9 @@
-import requests
+import os
 import time
+
+import requests
+
+_HEADERS = {"x-api-key": os.environ["S2_API_KEY"]} if os.getenv("S2_API_KEY") else {}
 
 
 def _extract_ss_id(url):
@@ -18,6 +22,7 @@ def _fetch_references(paper_id):
         resp = requests.get(
             f"https://api.semanticscholar.org/graph/v1/paper/{paper_id}/references",
             params={"fields": "title,authors,year,abstract,url"},
+            headers=_HEADERS,
             timeout=15
         )
         if resp.status_code == 429:

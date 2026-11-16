@@ -1,0 +1,17 @@
+# web server + live mode
+fastapi>=0.136
+uvicorn[standard]>=0.47
+websockets>=15
+httpx>=0.28
+python-dotenv>=1.0
+# local Hugging Face models (keyphrases + re-ranking)
+torch>=2.10
+transformers>=5.0
+sentence-transformers>=5.0
+numpy>=2.0
+# deep search pipeline
+arxiv>=2.1
+requests>=2.32
+langchain-core>=1.0
+langchain-ollama>=1.0
+google-genai>=1.60
