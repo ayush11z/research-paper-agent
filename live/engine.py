@@ -87,6 +87,7 @@ class LiveSession:
         self.shown: dict[str, int] = {}        # paper key / title -> topic that showed it
         self.llm_cursor = 0                    # finals already read by the LLM
         self.total_finals = 0
+        self.speculative: dict[int, str] = {}  # topic id -> phrase fired from an interim result
         self.interim_hits: Counter = Counter()
         self.topic_id = 0
         self.search_sem = asyncio.Semaphore(4)
@@ -94,6 +95,7 @@ class LiveSession:
         self.llm_dirty = False
         self.words_since_llm = 0
         self.tasks: set[asyncio.Task] = set()
+        self.topic_tasks: dict[int, asyncio.Task] = {}
         self.dg = None
         self.last_audio = 0.0
 
@@ -234,9 +236,16 @@ class LiveSession:
             self.interim_hits[phrase] += 1
             # stable across two interim results -> search before the sentence is even finished
             if self.interim_hits[phrase] == 2 and " " in phrase:
-                self.fire(phrase, "instant", t0)
+                tid = self.fire(phrase, "instant", t0)
+                if tid:
+                    self.speculative[tid] = phrase
 
     async def on_final(self, text: str, speaker: str, t0: float, utterance_done: bool):
+        final_norm = normalize_phrase(text)
+        for tid, phrase in list(self.speculative.items()):
+            if phrase not in final_norm:  # interim was mis-heard (e.g. "weather" vs "whether")
+                self.retract(tid, phrase)
+        self.speculative.clear()
         self.finals.append((time.time(), speaker, text))
         self.total_finals += 1
         self.interim_hits.clear()
@@ -271,6 +280,7 @@ class LiveSession:
             new = max(1, min(len(lines), self.llm_cursor_new()))
             self.llm_cursor = self.total_finals
             queries = await self.svc.llm.extract("\n".join(lines[-new:]), lines[:-new], list(self.searched))
+            self.send("log", message=f"llm queries: {queries}")
             for q in queries:
                 self.fire(q, "llm", t0)
         except Exception as e:
@@ -289,7 +299,8 @@ class LiveSession:
         return {w.rstrip("s") for w in normalize_phrase(q).split() if len(w) > 2}
 
     def recently_searched(self, query: str) -> bool:
-        """True if an earlier query was as specific (superset) or nearly the same (Jaccard >= 0.6)."""
+        """True if an earlier query covers this one: a superset of its words, or nearly the
+        same words (Jaccard >= 0.6) without being more specific."""
         q = self._tokens(query)
         if not q:
             return True
@@ -298,16 +309,25 @@ class LiveSession:
             if now - ts > 600:
                 continue
             p = self._tokens(prev)
-            if q <= p or len(q & p) / len(q | p) >= 0.6:
+            if q <= p or (len(q & p) / len(q | p) >= 0.6 and len(q) <= len(p)):
                 return True
         return False
 
-    def fire(self, query: str, via: str, t0: float):
+    def fire(self, query: str, via: str, t0: float) -> int | None:
         if self.recently_searched(query):
-            return
+            return None
         self.searched[normalize_phrase(query)] = time.time()
         self.topic_id += 1
-        self.spawn(self.search_topic(self.topic_id, query, via, t0))
+        self.topic_tasks[self.topic_id] = self.spawn(self.search_topic(self.topic_id, query, via, t0))
+        return self.topic_id
+
+    def retract(self, tid: int, phrase: str):
+        task = self.topic_tasks.pop(tid, None)
+        if task:
+            task.cancel()
+        self.searched.pop(normalize_phrase(phrase), None)
+        self.shown = {k: v for k, v in self.shown.items() if v != tid}
+        self.send("topic_retract", id=tid)
 
     # ── search + rank ─────────────────────────────────────────────────────
 
@@ -359,3 +379,4 @@ class LiveSession:
                 for t in tasks:
                     t.cancel()
             self.send("topic_done", id=tid, found=len(sent_keys))
+        self.topic_tasks.pop(tid, None)

@@ -153,6 +153,7 @@ function handle(m) {
     case "topic": addTopic(m); break;
     case "papers": addPapers(m); break;
     case "topic_done": topicDone(m); break;
+    case "topic_retract": { const t = topics.get(m.id); if (t) { t.el.remove(); topics.delete(m.id); } break; }
     case "listening": listening = m.on; renderPills(true); if (!m.on) stopAudio(); break;
     case "error": addSystemLine(m.message, true); if (!listening) stopAudio(); break;
     case "log": console.log(m.message); break;
